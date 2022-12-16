@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import {
-  Button,
-  Card,
-  CardContent,
-  Typography,
-} from '@mui/material';
+import { Button, Card, CardContent, Typography } from '@mui/material';
 
 import { babyNames } from './utils/babyNames';
 import { partition } from './utils/utils';
@@ -15,6 +10,39 @@ const GENDERS = {
   FEMALE: 1,
 };
 
+function fillPopularityMeter(dataset: string[][]) {
+  let counter = 0;
+
+  let popularityMeter: { [key: number]: string } = {};
+
+  for (const entry of dataset) {
+    const [YoB, babyGender, ethnicity, name, equalNameCount, rank] = entry;
+    counter += parseInt(equalNameCount);
+    popularityMeter[counter] = name;
+  }
+
+  return popularityMeter;
+}
+
+function pickRandomName(popularityMeter: { [key: number]: string }) {
+  const keys = Object.keys(popularityMeter);
+  const totalCount = keys[keys.length - 1];
+
+  const randNumber = Math.floor(Math.random() * parseInt(totalCount));
+
+  let keyToReturn: number = 0;
+  for (let key of keys) {
+    if (parseInt(key) > randNumber) {
+      keyToReturn = parseInt(key);
+      break;
+    }
+  }
+
+  const name = popularityMeter[keyToReturn];
+
+  return name;
+}
+
 function App() {
   const dataset = babyNames;
 
@@ -22,16 +50,17 @@ function App() {
 
   const datasets = partition(dataset, (elem: string[]) => elem[1] === 'MALE');
 
-  function pickRandomName(gender: number) {
-    // Typescript gives us an error on trying to access with .length, so this workaround was made
-    const index = Math.floor(Math.random() * datasets[gender]['length']);
+  let popularityMeterMale: { [key: number]: string } = {};
+  let popularityMeterFemale: { [key: number]: string } = {};
 
-    const [YoB, babyGender, ethnicity, name, equalNameCount, rank] =
-      datasets[gender][index];
+  popularityMeterMale = fillPopularityMeter(datasets[0]);
+  popularityMeterFemale = fillPopularityMeter(datasets[1]);
 
+  const popularityMeters = [popularityMeterMale, popularityMeterFemale];
+
+  function handleOnClick(gender: number) {
+    const name = pickRandomName(popularityMeters[gender]);
     setCurrentName(name);
-
-    return datasets[gender][index];
   }
 
   return (
@@ -43,7 +72,7 @@ function App() {
             color="primary"
             size="large"
             variant="outlined"
-            onClick={() => pickRandomName(GENDERS.MALE)}
+            onClick={() => handleOnClick(GENDERS.MALE)}
           >
             Male
           </Button>
@@ -51,7 +80,7 @@ function App() {
             color="primary"
             size="large"
             variant="outlined"
-            onClick={() => pickRandomName(GENDERS.FEMALE)}
+            onClick={() => handleOnClick(GENDERS.FEMALE)}
           >
             Female
           </Button>
